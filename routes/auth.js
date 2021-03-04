@@ -7,6 +7,9 @@ router.post('/register', controller.register)
 
 router.get('/info', authMiddleware, controller.getInfo)
 
+router.patch('/submit', controller.submit)
+router.patch('/faucet', controller.faucet)
+
 
 
 module.exports = router
