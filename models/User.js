@@ -11,6 +11,9 @@ const userSchema = new Schema({
     },
     nonce: {
         type: Number
+    },
+    lastRequestDate: {
+        type: Date , default: Date.now
     }
 
 })

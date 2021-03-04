@@ -14,19 +14,13 @@ const randomInteger = function (min, max) {
     return Math.floor(rand);
 }
 
-let randomTask = randomInteger(1, 100)
+let randomTask = randomInteger(1, 1000)
+
 
 
 module.exports.register = async function (req, res) {
     try {
-        // const candidate = await User.findOne({username: req.body.username})
-        // if (candidate) {
-        // if (bcrypt.compareSync(req.body.username, candidate.username)) {
-        //     res.status(409).json({message: 'Такой пользователь уже существует'})
-        //     }
-        // } else {
-
-
+        const lastRequestDate = new Date()
         const ip = await getClientAddress(req)
         const token = jwt.sign({
             ip: ip
@@ -42,11 +36,11 @@ module.exports.register = async function (req, res) {
         const user = new User({
             publicKey: tokenHash,
             vETH: 1,
-            nonce: 1
+            nonce: 1,
+            lastRequestDate: lastRequestDate,
         })
         await user.save()
         res.status(201).json({message: `Пользователь был успешно зарегистрирован. Вам начислен 1 vETH . Ваш privateKey = ${token}`})
-        //}
         //}
 
     } catch (e) {
@@ -71,8 +65,6 @@ module.exports.getInfo = async function (req, res) {
 module.exports.submit = async function (req, res) {
     const privateK = sha256(req.body.privateKey)
 
-
-
     try {
 
         for (let i = 0; ; i++) {
@@ -86,11 +78,11 @@ module.exports.submit = async function (req, res) {
                 )
 
                 res.status(200).json({message: `Поздарвляем! Вы добыли 1 vETH`})
-                return randomTask = randomInteger(1,100)
+                return randomTask = randomInteger(1,1000)
             break;
             }
         }
-        // res.status(200).json({message: `Поздарвляем! Вы добыли 1 vETH`})
+
     } catch (e) {
         console.log(e);
     }
@@ -98,7 +90,35 @@ module.exports.submit = async function (req, res) {
 
 module.exports.faucet = async function (req, res) {
     try {
-        data = new Data()
+        let currentDate = new Date()
+        const getTimeDifference = (user) => {
+            return currentDate - user.lastRequestDate
+        }
+
+        const privateK = sha256(req.body.privateKey)
+        const user = await User.findOne({publicKey: privateK})
+// Если разница во времени с последнего запроса больше 10 минут , то выполняется функция...
+        if (getTimeDifference(user) >= 600000 ) {
+            let setDate = new Date()
+            const user = await User.findOneAndUpdate(
+                {publicKey: privateK},
+                { $inc: {vETH: 1}, $set: {lastRequestDate: setDate}},
+                {new: true}
+            )
+            res.status(200).json({message: `Поздравляем! Вы добыли 1 vETH`})
+            return currentDate = new Date()
+
+        } else {
+            const user = await User.findOneAndUpdate(
+                {publicKey: privateK},
+                { $inc: {vETH: -0.05}},
+                {new: true}
+            )
+            res.status(200).json({message: `Данный запрос можно отправлять один раз в 10 минут. С вашего счёта сняли 0.05 vETH`})
+            return currentDate = new Date()
+        }
+
+
     } catch (e) {
         console.log(e);
     }
