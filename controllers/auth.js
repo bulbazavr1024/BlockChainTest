@@ -3,6 +3,8 @@ const keys = require('../config/keys')
 const sha256 = require('js-sha256')
 const User = require('../Models/User')
 
+
+// Получаем IP пользователя для регистрации
 const getClientAddress = (req) => {
     return (req.headers['x-forwarded-for'] || '').split(',')[0]
         || req.connection.remoteAddress;
@@ -15,7 +17,6 @@ const randomInteger = function (min, max) {
 }
 
 let randomTask = randomInteger(1, 1000)
-
 
 
 module.exports.register = async function (req, res) {
@@ -70,16 +71,17 @@ module.exports.submit = async function (req, res) {
         for (let i = 0; ; i++) {
             let summ = randomTask + i
             let verifiable = sha256(String(summ))
+            // Нахождение 4х последних символов строки
             if ((verifiable[verifiable.length - 1] == 0) && (verifiable[verifiable.length - 2] == 0) && (verifiable[verifiable.length - 3] == 0) && (verifiable[verifiable.length - 4] == 0)) {
                 const user = await User.findOneAndUpdate(
                     {publicKey: privateK},
-                    { $inc: {vETH: 1}},
+                    {$inc: {vETH: 1}},
                     {new: true}
                 )
 
                 res.status(200).json({message: `Поздарвляем! Вы добыли 1 vETH`})
-                return randomTask = randomInteger(1,1000)
-            break;
+                return randomTask = randomInteger(1, 1000)
+                break;
             }
         }
 
@@ -98,11 +100,11 @@ module.exports.faucet = async function (req, res) {
         const privateK = sha256(req.body.privateKey)
         const user = await User.findOne({publicKey: privateK})
 // Если разница во времени с последнего запроса больше 10 минут , то выполняется функция...
-        if (getTimeDifference(user) >= 600000 ) {
+        if (getTimeDifference(user) >= 600000) {
             let setDate = new Date()
             const user = await User.findOneAndUpdate(
                 {publicKey: privateK},
-                { $inc: {vETH: 1}, $set: {lastRequestDate: setDate}},
+                {$inc: {vETH: 1}, $set: {lastRequestDate: setDate}},
                 {new: true}
             )
             res.status(200).json({message: `Поздравляем! Вы добыли 1 vETH`})
@@ -111,7 +113,7 @@ module.exports.faucet = async function (req, res) {
         } else {
             const user = await User.findOneAndUpdate(
                 {publicKey: privateK},
-                { $inc: {vETH: -0.05}},
+                {$inc: {vETH: -0.05}},
                 {new: true}
             )
             res.status(200).json({message: `Данный запрос можно отправлять один раз в 10 минут. С вашего счёта сняли 0.05 vETH`})
