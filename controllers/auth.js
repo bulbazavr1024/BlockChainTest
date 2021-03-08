@@ -63,32 +63,69 @@ module.exports.getInfo = async function (req, res) {
     }
 }
 
-module.exports.submit = async function (req, res) {
-    const privateK = sha256(req.body.privateKey)
+// module.exports.submit = async function (req, res) {
+//     const privateK = sha256(req.body.privateKey)
+//
+//     try {
+//
+//         for (let i = 0; ; i++) {
+//             let summ = randomTask + i
+//             let verifiable = sha256(String(summ))
+//             // Нахождение 4х последних символов строки
+//             if ((verifiable[verifiable.length - 1] == 0) && (verifiable[verifiable.length - 2] == 0) && (verifiable[verifiable.length - 3] == 0) && (verifiable[verifiable.length - 4] == 0)) {
+//                 const user = await User.findOneAndUpdate(
+//                     {publicKey: privateK},
+//                     {$inc: {vETH: 1}},
+//                     {new: true}
+//                 )
+//
+//                 res.status(200).json({message: `Поздарвляем! Вы добыли 1 vETH`})
+//                 return randomTask = randomInteger(1, 1000)
+//                 break;
+//             }
+//         }
+//
+//     } catch (e) {
+//         console.log(e);
+//     }
+// }
 
+module.exports.url = function (req, res) {
     try {
-
-        for (let i = 0; ; i++) {
-            let summ = randomTask + i
-            let verifiable = sha256(String(summ))
-            // Нахождение 4х последних символов строки
-            if ((verifiable[verifiable.length - 1] == 0) && (verifiable[verifiable.length - 2] == 0) && (verifiable[verifiable.length - 3] == 0) && (verifiable[verifiable.length - 4] == 0)) {
-                const user = await User.findOneAndUpdate(
-                    {publicKey: privateK},
-                    {$inc: {vETH: 1}},
-                    {new: true}
-                )
-
-                res.status(200).json({message: `Поздарвляем! Вы добыли 1 vETH`})
-                return randomTask = randomInteger(1, 1000)
-                break;
-            }
-        }
-
+        res.status(200).json(randomTask)
     } catch (e) {
         console.log(e);
     }
 }
+
+module.exports.url2 = async function (req,res) {
+    const privateK = sha256(req.body.privateKey)
+    const {result} = req.body
+    // console.log(result)
+    let summ = randomTask + result
+    let verify = sha256(String(summ))
+
+    console.log(verify);
+    try {
+
+
+        if ((verify[verify.length - 1] == 0) && (verify[verify.length - 2] == 0) && (verify[verify.length - 3] == 0) && (verify[verify.length - 4] == 0)) {
+            const user = await User.findOneAndUpdate(
+                {publicKey: privateK},
+                {$inc: {vETH: 1}},
+                {new: true}
+            )
+
+            res.status(200).json({message: `Поздарвляем! Вы добыли 1 vETH`})
+            return randomTask = randomInteger(1, 1000)
+        } else {
+            res.status(400).json({message: 'не получилось подобрать'})
+        }
+    } catch (e) {
+        console.log(e);
+    }
+}
+
 
 module.exports.faucet = async function (req, res) {
     try {

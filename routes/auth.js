@@ -6,8 +6,9 @@ const authMiddleware = require('../middleware/authMiddleware')
 router.post('/register', controller.register)
 
 router.get('/info', authMiddleware, controller.getInfo)
+router.get('/url',  controller.url)
+router.post('/url2', authMiddleware, controller.url2)
 
-router.patch('/submit', controller.submit)
 router.patch('/faucet', controller.faucet)
 
 
