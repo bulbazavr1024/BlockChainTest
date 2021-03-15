@@ -28,12 +28,12 @@ module.exports.register = async function (req, res) {
         }, keys.jwt, {expiresIn: '24h'})
         const tokenHash = sha256(token)
 
-        // const candidate = await User.findOne({publicKey: tokenHash})
-        //
-        // if (candidate) {
-        //      if (candidate.publicKey === tokenHash) {
-        //     res.status(409).json({message: 'Такой пользователь уже существует'})}
-        // } else {
+        const candidate = await User.findOne({publicKey: tokenHash})
+
+        if (candidate) {
+             if (candidate.publicKey === tokenHash) {
+            res.status(409).json({message: 'Такой пользователь уже существует'})}
+        } else {
         const user = new User({
             publicKey: tokenHash,
             vETH: 1,
@@ -42,10 +42,11 @@ module.exports.register = async function (req, res) {
         })
         await user.save()
         res.status(201).json({message: `Пользователь был успешно зарегистрирован. Вам начислен 1 vETH . Ваш privateKey = ${token}`})
-        //}
+        }
 
     } catch (e) {
-        console.log(e);
+        res.status(400).json({message: 'Такой пользователь уже существует'})
+
     }
 }
 
@@ -90,6 +91,7 @@ module.exports.getInfo = async function (req, res) {
 //     }
 // }
 
+// Url для получения текущей задачи с сервера
 module.exports.url = function (req, res) {
     try {
         res.status(200).json(randomTask)
@@ -98,6 +100,7 @@ module.exports.url = function (req, res) {
     }
 }
 
+// Url для проверки решенной задачи на клиенте и начисления vETH за правильное решение
 module.exports.url2 = async function (req,res) {
     const privateK = sha256(req.body.privateKey)
     const {result} = req.body
@@ -126,7 +129,7 @@ module.exports.url2 = async function (req,res) {
     }
 }
 
-
+// Аналог AirDrop для получения vETH раз в 10 минут
 module.exports.faucet = async function (req, res) {
     try {
         let currentDate = new Date()

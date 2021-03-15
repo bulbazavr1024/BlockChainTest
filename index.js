@@ -11,7 +11,7 @@ app.use(express.urlencoded({extended: false}))
 app.use('/api/submit', express.static(path.resolve(__dirname, "./src/")))
 app.use('/api', authRoutes)
 
-
+// Хостинг сервера и подключение к БД
 const start = async () => {
     try {
         await mongoose.connect('mongodb+srv://qwerty:qwerty123@cluster0.mpofz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
