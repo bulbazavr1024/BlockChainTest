@@ -14,6 +14,9 @@ const userSchema = new Schema({
     },
     lastRequestDate: {
         type: Date , default: Date.now
+    },
+    lastTransactionProof: {
+        type: String
     }
 
 })

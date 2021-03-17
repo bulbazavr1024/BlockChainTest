@@ -21,7 +21,6 @@ let randomTask = randomInteger(1, 1000)
 
 module.exports.register = async function (req, res) {
     try {
-        const lastRequestDate = new Date()
         const ip = await getClientAddress(req)
         const token = jwt.sign({
             ip: ip
@@ -31,17 +30,19 @@ module.exports.register = async function (req, res) {
         const candidate = await User.findOne({publicKey: tokenHash})
 
         if (candidate) {
-             if (candidate.publicKey === tokenHash) {
-            res.status(409).json({message: 'Такой пользователь уже существует'})}
+            if (candidate.publicKey === tokenHash) {
+                res.status(409).json({message: 'Такой пользователь уже существует'})
+            }
         } else {
-        const user = new User({
-            publicKey: tokenHash,
-            vETH: 1,
-            nonce: 1,
-            lastRequestDate: lastRequestDate,
-        })
-        await user.save()
-        res.status(201).json({message: `Пользователь был успешно зарегистрирован. Вам начислен 1 vETH . Ваш privateKey = ${token}`})
+            const user = new User({
+                publicKey: tokenHash,
+                vETH: 1,
+                nonce: 1,
+                lastRequestDate: null,
+                lastTransactionProof: null
+            })
+            await user.save()
+            res.status(201).json({message: `Пользователь был успешно зарегистрирован. Вам начислен 1 vETH . Ваш privateKey = ${token}`})
         }
 
     } catch (e) {
@@ -64,32 +65,6 @@ module.exports.getInfo = async function (req, res) {
     }
 }
 
-// module.exports.submit = async function (req, res) {
-//     const privateK = sha256(req.body.privateKey)
-//
-//     try {
-//
-//         for (let i = 0; ; i++) {
-//             let summ = randomTask + i
-//             let verifiable = sha256(String(summ))
-//             // Нахождение 4х последних символов строки
-//             if ((verifiable[verifiable.length - 1] == 0) && (verifiable[verifiable.length - 2] == 0) && (verifiable[verifiable.length - 3] == 0) && (verifiable[verifiable.length - 4] == 0)) {
-//                 const user = await User.findOneAndUpdate(
-//                     {publicKey: privateK},
-//                     {$inc: {vETH: 1}},
-//                     {new: true}
-//                 )
-//
-//                 res.status(200).json({message: `Поздарвляем! Вы добыли 1 vETH`})
-//                 return randomTask = randomInteger(1, 1000)
-//                 break;
-//             }
-//         }
-//
-//     } catch (e) {
-//         console.log(e);
-//     }
-// }
 
 // Url для получения текущей задачи с сервера
 module.exports.url = function (req, res) {
@@ -101,7 +76,7 @@ module.exports.url = function (req, res) {
 }
 
 // Url для проверки решенной задачи на клиенте и начисления vETH за правильное решение
-module.exports.url2 = async function (req,res) {
+module.exports.url2 = async function (req, res) {
     const privateK = sha256(req.body.privateKey)
     const {result} = req.body
     // console.log(result)
@@ -139,25 +114,32 @@ module.exports.faucet = async function (req, res) {
 
         const privateK = sha256(req.body.privateKey)
         const user = await User.findOne({publicKey: privateK})
+        const ProofSum = user.publicKey + user.nonce
+        const ProofSumHash = sha256(ProofSum)
 // Если разница во времени с последнего запроса больше 10 минут , то выполняется функция...
         if (getTimeDifference(user) >= 600000) {
             let setDate = new Date()
             const user = await User.findOneAndUpdate(
                 {publicKey: privateK},
-                {$inc: {vETH: 1}, $set: {lastRequestDate: setDate}},
+                {$set: {lastRequestDate: setDate, lastTransactionProof: ProofSumHash}, $inc: {vETH: 1, nonce: 1}},
                 {new: true}
             )
-            res.status(200).json({message: `Поздравляем! Вы добыли 1 vETH`})
+            res.status(200).json({message: `Поздравляем! Вы добыли 1 vETH. Данный запрос можно делать 1 раз в 10 минут , иначе с вашего счёта будет списано 0.05 vETH`})
             return currentDate = new Date()
 
         } else {
-            const user = await User.findOneAndUpdate(
-                {publicKey: privateK},
-                {$inc: {vETH: -0.05}},
-                {new: true}
-            )
-            res.status(200).json({message: `Данный запрос можно отправлять один раз в 10 минут. С вашего счёта сняли 0.05 vETH`})
-            return currentDate = new Date()
+            if (user.vETH > 0.05) {
+                const user = await User.findOneAndUpdate(
+                    {publicKey: privateK},
+                    {$inc: {vETH: -0.05, nonce: 1}},
+                    {new: true}
+                )
+                res.status(200).json({message: `Данный запрос можно отправлять один раз в 10 минут. С вашего счёта списали 0.05 vETH`})
+                return currentDate = new Date()
+            }
+            else {
+                res.status(200).json({message: 'Подождите 10 минут, чтобы снова получить AirDrop'})
+            }
         }
 
 
